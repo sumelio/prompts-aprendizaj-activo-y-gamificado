@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Aprendizaje Activo — 4 Prompts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0c0c0f;
+  --bg2: #13131a;
+  --bg3: #1a1a24;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.13);
+  --text: #f0ede8;
+  --text2: #9a9492;
+  --text3: #5c5a58;
+  --c1: #e8c97a;   /* amber — prompt 1 */
+  --c2: #6ee7b7;   /* teal  — prompt 2 */
+  --c3: #f09070;   /* coral — prompt 3 */
+  --c4: #a78bfa;   /* violet — prompt 4 */
+  --c1bg: rgba(232,201,122,0.08);
+  --c2bg: rgba(110,231,183,0.08);
+  --c3bg: rgba(240,144,112,0.08);
+  --c4bg: rgba(167,139,250,0.08);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  font-weight: 400;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── NOISE TEXTURE ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.6;
+}
+
+/* ── GRID BG ── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+  z-index: 0;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 0%, transparent 70%);
+}
+
+.wrap {
+  position: relative;
+  z-index: 1;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* ── HERO ── */
+.hero {
+  padding: 6rem 0 4rem;
+  text-align: center;
+}
+
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text3);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  padding: 5px 16px;
+  margin-bottom: 2rem;
+  animation: fadeUp 0.6s ease both;
+}
+
+.hero-eyebrow span {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--c1);
+  display: inline-block;
+  animation: pulse 2s ease infinite;
+}
+
+@keyframes pulse {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+
+.hero h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(2.8rem, 6vw, 4.5rem);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin-bottom: 1.5rem;
+  animation: fadeUp 0.6s 0.1s ease both;
+}
+
+.hero h1 em {
+  font-style: italic;
+  color: var(--c1);
+}
+
+.hero-sub {
+  font-size: 1.05rem;
+  color: var(--text2);
+  max-width: 520px;
+  margin: 0 auto 2.5rem;
+  font-weight: 300;
+  animation: fadeUp 0.6s 0.2s ease both;
+}
+
+.hero-meta {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  animation: fadeUp 0.6s 0.3s ease both;
+}
+
+.hero-meta-item {
+  text-align: center;
+}
+
+.hero-meta-num {
+  font-family: 'DM Serif Display', serif;
+  font-size: 2rem;
+  color: var(--text);
+  display: block;
+}
+
+.hero-meta-label {
+  font-size: 11px;
+  color: var(--text3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ── FLOW INDICATOR ── */
+.flow-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin: 3rem 0 3.5rem;
+  animation: fadeUp 0.6s 0.4s ease both;
+}
+
+.flow-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.flow-dot {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid var(--border2);
+  background: var(--bg2);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  color: var(--text2);
+}
+
+.flow-dot:hover { border-color: var(--border2); transform: scale(1.1); }
+.flow-dot.d1 { border-color: var(--c1); color: var(--c1); }
+.flow-dot.d2 { border-color: var(--c2); color: var(--c2); }
+.flow-dot.d3 { border-color: var(--c3); color: var(--c3); }
+.flow-dot.d4 { border-color: var(--c4); color: var(--c4); }
+
+.flow-label {
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 0.04em;
+}
+
+.flow-arrow {
+  width: 48px; height: 1px;
+  background: var(--border2);
+  position: relative;
+  top: -12px;
+  flex-shrink: 0;
+}
+
+.flow-arrow::after {
+  content: '';
+  position: absolute;
+  right: 0; top: -3px;
+  border: 4px solid transparent;
+  border-left: 5px solid var(--border2);
+}
+
+/* ── SECTION DIVIDER ── */
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 3rem 0;
+}
+
+/* ── HOW IT WORKS ── */
+.section-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.6rem;
+  font-weight: 400;
+  margin-bottom: 1.5rem;
+  color: var(--text);
+}
+
+.how-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 3rem;
+}
+
+.how-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.how-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+
+.how-icon {
+  font-size: 1.4rem;
+  margin-bottom: 10px;
+}
+
+.how-card h3 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.how-card p {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.5;
+}
+
+/* ── PROMPT CARDS ── */
+.prompts {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: 4rem;
+}
+
+.pcard {
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  overflow: hidden;
+  transition: border-color 0.25s, transform 0.2s;
+  animation: fadeUp 0.5s ease both;
+}
+.pcard:hover { transform: translateY(-1px); }
+
+.pcard.p1 { --accent: var(--c1); --accentbg: var(--c1bg); }
+.pcard.p2 { --accent: var(--c2); --accentbg: var(--c2bg); }
+.pcard.p3 { --accent: var(--c3); --accentbg: var(--c3bg); }
+.pcard.p4 { --accent: var(--c4); --accentbg: var(--c4bg); }
+
+.pcard.open { border-color: var(--accent); }
+
+.pcard-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.pcard-num {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: var(--accentbg);
+  border: 1px solid var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.1rem;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.pcard-meta { flex: 1; }
+
+.pcard-tag {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 3px;
+}
+
+.pcard-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.pcard-desc {
+  font-size: 12px;
+  color: var(--text2);
+  margin-top: 2px;
+}
+
+.pcard-toggle {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--border2);
+  background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text3);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.pcard.open .pcard-toggle { transform: rotate(180deg); border-color: var(--accent); color: var(--accent); }
+
+.pcard-body {
+  display: none;
+  padding: 0 1.5rem 1.5rem;
+  border-top: 1px solid var(--border);
+}
+.pcard.open .pcard-body { display: block; }
+
+.label {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin: 1.25rem 0 0.6rem;
+}
+
+.prompt-box {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.1rem 1.25rem;
+  font-family: 'DM Mono', monospace;
+  font-size: 12.5px;
+  color: var(--text2);
+  line-height: 1.75;
+  white-space: pre-wrap;
+  word-break: break-word;
+  position: relative;
+}
+
+.prompt-box .var-highlight {
+  color: var(--accent);
+  background: var(--accentbg);
+  border-radius: 4px;
+  padding: 1px 4px;
+}
+
+.vars-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 0.6rem;
+}
+
+.var-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--accentbg);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px;
+  padding: 3px 10px;
+}
+
+.btn-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  font-family: 'Outfit', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 7px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text2);
+  transition: all 0.15s;
+  letter-spacing: 0.01em;
+}
+.btn:hover { background: var(--bg3); color: var(--text); border-color: var(--accent); }
+.btn.primary { background: var(--accentbg); border-color: var(--accent); color: var(--accent); }
+.btn.primary:hover { background: var(--accent); color: var(--bg); }
+.btn.copied { background: rgba(110,231,183,0.1); border-color: var(--c2); color: var(--c2); }
+
+.connector-bar {
+  display: flex;
+  align-items: center;
+  padding: 0 2rem;
+  gap: 12px;
+  color: var(--text3);
+  font-size: 11px;
+}
+.connector-bar::before,
+.connector-bar::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── FOOTER ── */
+footer {
+  text-align: center;
+  padding: 3rem 0 4rem;
+  border-top: 1px solid var(--border);
+}
+
+.footer-logo {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.3rem;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+footer p {
+  font-size: 12px;
+  color: var(--text3);
+}
+
+footer a {
+  color: var(--c1);
+  text-decoration: none;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.pcard:nth-child(1) { animation-delay: 0.05s; }
+.pcard:nth-child(3) { animation-delay: 0.1s; }
+.pcard:nth-child(5) { animation-delay: 0.15s; }
+.pcard:nth-child(7) { animation-delay: 0.2s; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+  .hero { padding: 3.5rem 0 2.5rem; }
+  .hero h1 { font-size: 2.2rem; }
+  .flow-arrow { width: 24px; }
+  .how-grid { grid-template-columns: 1fr 1fr; }
+  .pcard-header { padding: 1rem; }
+  .pcard-body { padding: 0 1rem 1rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <header class="hero">
+    <div class="hero-eyebrow"><span></span> Sistema de prompts · v1.0</div>
+    <h1>Aprende más rápido<br>con <em>IA como mentor</em></h1>
+    <p class="hero-sub">Un sistema de 4 prompts interconectados que convierte cualquier tema en una experiencia de aprendizaje activo, gamificada y evaluable.</p>
+    <div class="hero-meta">
+      <div class="hero-meta-item">
+        <span class="hero-meta-num">4</span>
+        <span class="hero-meta-label">Prompts</span>
+      </div>
+      <div class="hero-meta-item">
+        <span class="hero-meta-num">1</span>
+        <span class="hero-meta-label">Ciclo completo</span>
+      </div>
+      <div class="hero-meta-item">
+        <span class="hero-meta-num">∞</span>
+        <span class="hero-meta-label">Temas</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- FLOW INDICATOR -->
+  <div class="flow-indicator">
+    <div class="flow-step">
+      <a href="#p1" class="flow-dot d1">1</a>
+      <span class="flow-label">Ruta</span>
+    </div>
+    <div class="flow-arrow"></div>
+    <div class="flow-step">
+      <a href="#p2" class="flow-dot d2">2</a>
+      <span class="flow-label">Aprende</span>
+    </div>
+    <div class="flow-arrow"></div>
+    <div class="flow-step">
+      <a href="#p3" class="flow-dot d3">3</a>
+      <span class="flow-label">Construye</span>
+    </div>
+    <div class="flow-arrow"></div>
+    <div class="flow-step">
+      <a href="#p4" class="flow-dot d4">4</a>
+      <span class="flow-label">Evalúa</span>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- HOW IT WORKS -->
+  <h2 class="section-title">¿Cómo funciona?</h2>
+  <div class="how-grid">
+    <div class="how-card">
+      <div class="how-icon">🗺️</div>
+      <h3>Define tu ruta</h3>
+      <p>El Prompt 1 convierte tus respuestas en un plan de aprendizaje en 3 fases con recursos y criterios de salida.</p>
+    </div>
+    <div class="how-card">
+      <div class="how-icon">🎮</div>
+      <h3>Aprende jugando</h3>
+      <p>El Prompt 2 te enseña con el método socrático, XP, niveles y retos. No te da respuestas — te hace pensar.</p>
+    </div>
+    <div class="how-card">
+      <div class="how-icon">🔨</div>
+      <h3>Construye algo real</h3>
+      <p>El Prompt 3 genera un mini-proyecto de 3–7 días con entregable concreto y modo difícil opcional.</p>
+    </div>
+    <div class="how-card">
+      <div class="how-icon">📊</div>
+      <h3>Mide tu dominio</h3>
+      <p>El Prompt 4 evalúa tu aprendizaje en 4 dimensiones y te dice si estás listo para avanzar.</p>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- PROMPTS -->
+  <h2 class="section-title">Los 4 prompts</h2>
+  <p style="color:var(--text2); font-size:14px; margin-bottom:1.75rem;">Haz clic en cada tarjeta para expandir el prompt. Copia y pega en ChatGPT, Claude, Gemini o Copilot — donde prefieras.</p>
+
+  <div class="prompts">
+
+    <!-- P1 -->
+    <div class="pcard p1" id="p1">
+      <div class="pcard-header" onclick="toggle('p1')">
+        <div class="pcard-num">1</div>
+        <div class="pcard-meta">
+          <div class="pcard-tag">Paso 1 — Planificación</div>
+          <div class="pcard-title">Ruta de aprendizaje personalizada</div>
+          <div class="pcard-desc">Define qué, por qué y cómo quieres aprender</div>
+        </div>
+        <button class="pcard-toggle" aria-label="Expandir">▾</button>
+      </div>
+      <div class="pcard-body">
+        <div class="label">Prompt — copia y reemplaza las variables</div>
+        <div class="prompt-box" id="txt1">Actúa como un mentor experto en aprendizaje efectivo y desarrollo profesional.
+
+Voy a responderte tres preguntas clave. Con base en mis respuestas, diseña una ruta de aprendizaje clara y accionable.
+
+Mis respuestas:
+- ¿Qué quiero aprender? → [TEMA]
+- ¿Por qué lo quiero aprender? → [MOTIVACIÓN]
+- ¿Con qué enfoque? → [desarrollo de software / construcción de un producto / crecimiento de un negocio]
+
+Tu tarea:
+1. Valida si el tema es concreto o necesita acotarse.
+2. Identifica los 5 conceptos clave que debo dominar.
+3. Propón una ruta de aprendizaje en 3 fases (fundamentos → práctica → dominio) con duración estimada por fase.
+4. Sugiere los 2–3 mejores recursos por fase (libros, cursos, documentación oficial).
+5. Define cómo sabré que estoy listo para avanzar a la siguiente fase (criterio de salida).
+
+Sé directo. Evita el relleno. Dame una hoja de ruta que pueda empezar hoy.</div>
+        <div class="label">Variables a reemplazar</div>
+        <div class="vars-row">
+          <span class="var-tag">[TEMA]</span>
+          <span class="var-tag">[MOTIVACIÓN]</span>
+          <span class="var-tag">[ENFOQUE]</span>
+        </div>
+        <div class="btn-row">
+          <button class="btn primary" onclick="copyPrompt('txt1', this)">⎘ Copiar prompt</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector-bar">↓ pega la ruta generada en el siguiente prompt</div>
+
+    <!-- P2 -->
+    <div class="pcard p2" id="p2">
+      <div class="pcard-header" onclick="toggle('p2')">
+        <div class="pcard-num">2</div>
+        <div class="pcard-meta">
+          <div class="pcard-tag">Paso 2 — Aprendizaje activo</div>
+          <div class="pcard-title">Tutor socrático con gamificación</div>
+          <div class="pcard-desc">Aprende con preguntas, XP y progresión de nivel</div>
+        </div>
+        <button class="pcard-toggle" aria-label="Expandir">▾</button>
+      </div>
+      <div class="pcard-body">
+        <div class="label">Prompt — copia y reemplaza las variables</div>
+        <div class="prompt-box" id="txt2">Contexto previo: [PEGA AQUÍ LA RUTA DE APRENDIZAJE DEL PROMPT 1]
+
+---
+
+Ahora actúa como un tutor que combina el método socrático de Platón con gamificación moderna.
+
+Tu personalidad: Eres curioso, desafiante y entusiasta. No das respuestas directas — guías con preguntas que me hacen pensar. Celebras mis avances. Me retas cuando me estanco.
+
+Sistema de juego:
+- Empezamos en Nivel 1 (Aprendiz). Hay 5 niveles hasta Maestro.
+- Cada respuesta correcta o reflexión profunda me da XP.
+- Cada 100 XP subo de nivel y desbloqueo un concepto más avanzado.
+- Si me equivoco, no me corriges directo — me haces una pregunta que me lleve a descubrirlo yo.
+
+Reglas:
+1. Empieza presentando el primer concepto clave como un misterio o pregunta abierta.
+2. Usa analogías con cosas cotidianas cuando algo sea abstracto.
+3. Cada 3 preguntas, dame un "checkpoint" con mi progreso (XP, nivel, concepto dominado).
+4. Si noto que me aburro o me frustro, cambia la estrategia — usa un reto práctico corto.
+
+Empieza ahora. Preséntate, explícame las reglas del juego y lanza la primera pregunta socrática.</div>
+        <div class="label">Variables a reemplazar</div>
+        <div class="vars-row">
+          <span class="var-tag">[RUTA DEL PROMPT 1]</span>
+        </div>
+        <div class="btn-row">
+          <button class="btn primary" onclick="copyPrompt('txt2', this)">⎘ Copiar prompt</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector-bar">↓ aplica lo que aprendiste en un proyecto real</div>
+
+    <!-- P3 -->
+    <div class="pcard p3" id="p3">
+      <div class="pcard-header" onclick="toggle('p3')">
+        <div class="pcard-num">3</div>
+        <div class="pcard-meta">
+          <div class="pcard-tag">Paso 3 — Práctica</div>
+          <div class="pcard-title">Generador de proyecto práctico</div>
+          <div class="pcard-desc">Un mini-proyecto real que consolida el aprendizaje</div>
+        </div>
+        <button class="pcard-toggle" aria-label="Expandir">▾</button>
+      </div>
+      <div class="pcard-body">
+        <div class="label">Prompt — copia y reemplaza las variables</div>
+        <div class="prompt-box" id="txt3">Contexto acumulado:
+- Ruta de aprendizaje: [PEGA RUTA DEL PROMPT 1]
+- Temas y conceptos que ya practiqué: [PEGA RESUMEN DE LO APRENDIDO EN PROMPT 2]
+
+---
+
+Actúa como un mentor de proyectos que diseña experiencias de aprendizaje práctico.
+
+Tu tarea: Dame UNA idea de mini-proyecto que cumpla estas condiciones:
+
+1. Alcanzable en 3–7 días trabajando 1–2 horas por día.
+2. Aplica al menos 3 conceptos que aprendí en el Prompt 2.
+3. Conectado con mi motivación real ([MOTIVACIÓN del Prompt 1]) — no un ejercicio genérico.
+4. Tiene un entregable concreto que pueda mostrar o compartir.
+5. Incluye un "modo difícil" opcional si quiero ir más allá.
+
+Formato de la propuesta:
+- Nombre del proyecto (memorable, no aburrido)
+- Qué problema resuelve o qué valor crea
+- Stack o herramientas recomendadas
+- Desglose en 5 pasos de construcción (día a día)
+- Criterio de "proyecto terminado" (definición de done)
+- Modo difícil: una extensión que lo lleve al siguiente nivel
+
+No me des 3 opciones. Dame la mejor y justifica por qué es la indicada para mí.</div>
+        <div class="label">Variables a reemplazar</div>
+        <div class="vars-row">
+          <span class="var-tag">[RUTA PROMPT 1]</span>
+          <span class="var-tag">[RESUMEN PROMPT 2]</span>
+          <span class="var-tag">[MOTIVACIÓN]</span>
+        </div>
+        <div class="btn-row">
+          <button class="btn primary" onclick="copyPrompt('txt3', this)">⎘ Copiar prompt</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector-bar">↓ cierra el ciclo con una evaluación honesta</div>
+
+    <!-- P4 -->
+    <div class="pcard p4" id="p4">
+      <div class="pcard-header" onclick="toggle('p4')">
+        <div class="pcard-num">4</div>
+        <div class="pcard-meta">
+          <div class="pcard-tag">Paso 4 — Evaluación</div>
+          <div class="pcard-title">Evaluación de dominio real</div>
+          <div class="pcard-desc">Fortalezas, brechas y tu próximo ciclo de aprendizaje</div>
+        </div>
+        <button class="pcard-toggle" aria-label="Expandir">▾</button>
+      </div>
+      <div class="pcard-body">
+        <div class="label">Prompt — copia y reemplaza las variables</div>
+        <div class="prompt-box" id="txt4">Contexto completo del ciclo:
+- Ruta definida: [PEGA RUTA DEL PROMPT 1]
+- Conceptos trabajados con el tutor: [PEGA RESUMEN PROMPT 2 — incluyendo preguntas que fallé]
+- Proyecto construido: [DESCRIBE BREVEMENTE TU PROYECTO Y CÓMO TE FUE]
+
+---
+
+Actúa como un evaluador experto, honesto y constructivo. Tu objetivo es darme una imagen real y precisa de mi nivel actual — sin suavizar ni inflar.
+
+Evaluación en 4 dimensiones (puntúa cada una del 1 al 10 con justificación breve):
+1. Comprensión conceptual — ¿Entiendo el "por qué" detrás de lo que aprendí?
+2. Aplicación práctica — ¿Pude usar el conocimiento en un contexto real?
+3. Resolución de problemas — ¿Cómo respondí cuando algo no funcionó?
+4. Independencia — ¿Puedo avanzar solo o todavía dependo mucho de guía?
+
+Análisis cualitativo:
+- Mis 3 fortalezas más evidentes (con evidencia concreta del proceso)
+- Mis 2–3 brechas críticas que frenarán mi crecimiento si no las atiendo
+- Un concepto donde claramente tengo confusión conceptual y cómo resolverlo
+
+Recomendación para el siguiente ciclo:
+- ¿Estoy listo para avanzar al siguiente tema? ¿O debo reforzar primero?
+- El tema más importante a trabajar en mi próximo ciclo de aprendizaje
+- Una pregunta de reflexión que debo responderme antes de continuar
+
+Sé directo. Si algo no está claro en mi aprendizaje, dímelo. La honestidad me ayuda más que el elogio.</div>
+        <div class="label">Variables a reemplazar</div>
+        <div class="vars-row">
+          <span class="var-tag">[RUTA PROMPT 1]</span>
+          <span class="var-tag">[RESUMEN PROMPT 2]</span>
+          <span class="var-tag">[DESCRIPCIÓN PROYECTO]</span>
+        </div>
+        <div class="btn-row">
+          <button class="btn primary" onclick="copyPrompt('txt4', this)">⎘ Copiar prompt</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo">Sistema de Aprendizaje Activo</div>
+    <p>Funciona con ChatGPT · Claude · Gemini · Copilot · Perplexity</p>
+    <p style="margin-top:0.5rem;">Creado por <a href="https://linkedin.com/in/sumel" target="_blank">Freddy Lemus</a> · 2025</p>
+  </footer>
+
+</div>
+
+<script>
+function toggle(id) {
+  const card = document.getElementById(id);
+  card.classList.toggle('open');
+}
+
+function copyPrompt(id, btn) {
+  const text = document.getElementById(id).innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✓ Copiado';
+    btn.classList.add('copied');
+    btn.classList.remove('primary');
+    setTimeout(() => {
+      btn.innerHTML = orig;
+      btn.classList.remove('copied');
+      btn.classList.add('primary');
+    }, 2000);
+  });
+}
+
+// Auto-open first card
+document.getElementById('p1').classList.add('open');
+
+// Scroll-reveal animation
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.style.opacity = '1';
+      e.target.style.transform = 'translateY(0)';
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.pcard, .how-card').forEach(el => {
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(16px)';
+  el.style.transition = 'opacity 0.5s ease, transform 0.5s ease, border-color 0.25s';
+  observer.observe(el);
+});
+</script>
+
+</body>
+</html>
